@@ -19,6 +19,7 @@ function saveEmail(email) {
     if (isValidEmail(email)) {
         localStorage.setItem('email', email);
         localStorage.removeItem('youReferrerId');
+        localStorage.removeItem('yourReferrerSlug');
     }
 }
 

@@ -2,22 +2,43 @@
 document.addEventListener('DOMContentLoaded', function() {
     const yourReferrerId = localStorage.getItem('yourReferrerId');
     const yourReferrerSlug = localStorage.getItem('yourReferrerSlug');
+    const email = localStorage.getItem('email');
     const mainReferrerLink = document.getElementById('main-referrer-link');
 
+    function updateLink(referrerId) {
+        const newUrl = `https://zigchain-landing-page.webflow.io/?z=${referrerId}`;
+        if (mainReferrerLink) {
+            mainReferrerLink.href = newUrl;
+            mainReferrerLink.textContent = newUrl;
+        }
+    }
+
+    function checkForReferrerId() {
+        const yourReferrerId = localStorage.getItem('yourReferrerId');
+        if (yourReferrerId) {
+            updateLink(yourReferrerId);
+            return true;
+        }
+        return false;
+    }
+
     if (yourReferrerSlug) {
-        const newUrl = `https://zigchain-landing-page.webflow.io/?z=${yourReferrerSlug}`;
-        if (mainReferrerLink) {
-            mainReferrerLink.href = newUrl;
-            mainReferrerLink.textContent = newUrl;
-        }
+        updateLink(yourReferrerSlug);
     } else if (yourReferrerId) {
-        const newUrl = `https://zigchain-landing-page.webflow.io/?z=${yourReferrerId}`;
-        if (mainReferrerLink) {
-            mainReferrerLink.href = newUrl;
-            mainReferrerLink.textContent = newUrl;
-        }
+        updateLink(yourReferrerId);
+    } else if (email) {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            if (checkForReferrerId() || attempts >= 15) {
+                clearInterval(interval);
+                if (attempts >= 15) {
+                    window.location.href = '/seekers';
+                }
+            }
+        }, 200);
     } else {
-        window.location.href = 'https://zigchain-landing-page.webflow.io/seekers';
+        window.location.href = '/seekers';
     }
 });
 </script>
