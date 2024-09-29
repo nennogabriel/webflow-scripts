@@ -1,0 +1,23 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const yourReferrerId = localStorage.getItem('yourReferrerId');
+    const yourReferrerSlug = localStorage.getItem('yourReferrerSlug');
+    const mainReferrerLink = document.getElementById('main-referrer-link');
+
+    if (yourReferrerSlug) {
+        const newUrl = `https://zigchain-landing-page.webflow.io/?z=${yourReferrerSlug}`;
+        if (mainReferrerLink) {
+            mainReferrerLink.href = newUrl;
+            mainReferrerLink.textContent = newUrl;
+        }
+    } else if (yourReferrerId) {
+        const newUrl = `https://zigchain-landing-page.webflow.io/?z=${yourReferrerId}`;
+        if (mainReferrerLink) {
+            mainReferrerLink.href = newUrl;
+            mainReferrerLink.textContent = newUrl;
+        }
+    } else {
+        window.location.href = 'https://zigchain-landing-page.webflow.io/seekers';
+    }
+});
+</script>

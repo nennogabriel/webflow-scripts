@@ -1,0 +1,90 @@
+<script>
+const _zigDataUrl = 'https://zignaly.1ad.me';
+
+// Function to get the value of a query parameter by name
+function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
+// Function to validate referrer ID with API
+async function validateReferrerId(referrerId) {
+    try {
+        // First Try: search by ID directly
+        let response = await fetch(`${_zigDataUrl}/items/leads/${referrerId}`);
+        if (response.status === 200) {
+            return referrerId;
+        } else {
+            // Second Try: search by slug
+            response = await fetch(`${_zigDataUrl}/items/leads?filter[slug][_eq]=${referrerId}`);
+            if (response.status === 200) {
+                const data = await response.json();
+                if (data && data.data && data.data.length === 1) {
+                    // Found a valid referrer ID
+                    return data.data[0].id;
+                }
+            }
+        }
+    } catch (error) {
+        // Silent failure if API call fails
+        return null;
+    }
+    return null;
+}
+
+// Function to handle referral check and storage
+async function handleReferral() {
+    const referrerId = getQueryParam('z');
+    
+    // Check if 'z' query param exists
+    if (referrerId) {
+        // Validate the referrer ID via API call
+        const validReferrerId = await validateReferrerId(referrerId);
+        if (validReferrerId) {
+            // Store the valid referrer ID in localStorage
+            localStorage.setItem('referrer_id', validReferrerId);
+        }
+        // Silent failure if referrer ID is invalid
+    }
+}
+
+// Function to fetch user ID using email and store it in localStorage
+async function fetchUserIdByEmail(email) {
+    try {
+        const response = await fetch(`${_zigDataUrl}/items/leads?filter[email][_eq]=${email}`);
+        if (response.status === 200) {
+            const data = await response.json();
+            if (data && data.data && data.data.length === 1) {
+                return data.data[0];
+            }
+        }
+    } catch (error) {
+        // Falha silenciosa se a chamada à API falhar
+        return null;
+    }
+    return null;
+}
+
+// Function to handle user ID check and storage
+async function handleUserId() {
+    const yourReferrerId = localStorage.getItem('yourReferrerId');
+    const email = localStorage.getItem('email');
+
+    if (!yourReferrerId && email) {
+        const user = await fetchUserIdByEmail(email);
+        if (user && user.id) {
+            localStorage.setItem('yourReferrerId', user.id);
+            if (user.slug) {
+                localStorage.setItem('yourReferrerSlug', user.slug);
+            }
+            localStorage.removeItem('email');
+        }
+    }
+}
+
+// Execute the referral handler and user ID handler on page load
+window.addEventListener('load', async () => {
+    await handleReferral();
+    await handleUserId();
+});
+</script>
