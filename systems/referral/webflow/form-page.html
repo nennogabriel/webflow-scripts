@@ -1,0 +1,64 @@
+<script>
+// Function to validate email
+function isValidEmailByRegex(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+// Function to save email in localStorage
+function saveEmail(email) {
+    if (isValidEmailByRegex(email)) {
+        localStorage.setItem('email', email);
+        localStorage.removeItem('your_ref_id');
+        localStorage.removeItem('your_ref_code');
+    }
+}
+
+// Add input event listener to the email field
+document.addEventListener('DOMContentLoaded', function() {
+    const emailInput = document.querySelector('input[name="email"]');
+    if (emailInput) {
+        emailInput.addEventListener('input', function() {
+            emailInput.value = emailInput.value.toLowerCase();
+            debounce(function() {
+                saveEmail(emailInput.value.toLowerCase());
+            }, 200)();
+        });
+    }
+
+    // Ensure email is lowercase before form submission
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            if (emailInput) {
+                emailInput.value = emailInput.value.toLowerCase();
+            }
+        });
+    }
+});
+
+// Function to pre-fill the hidden input with ref_by from localStorage
+function populateRefBy() {
+    const refBy = localStorage.getItem('ref_by');
+    if (refBy) {
+        const referrerInput = document.querySelector('input[name="ref_by"]');
+        if (referrerInput) {
+            referrerInput.value = `"${refBy}"`;
+        }
+    }
+}
+
+// Execute the function when the page loads, after a delay of 1 second
+window.addEventListener('load', function() {
+    setTimeout(populateRefBy, 300);
+});
+</script>

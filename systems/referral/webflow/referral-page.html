@@ -1,0 +1,45 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const yourRefID = localStorage.getItem('your_ref_id');
+    const yourRefCode = localStorage.getItem('your_ref_code');
+    const email = localStorage.getItem('email');
+    const mainReferrerLink = document.getElementById('main-referrer-link');
+
+    function updateLink(refCode) {
+        const newUrl = `https://zigchain-landing-page.webflow.io/?z=${refCode}`;
+        if (mainReferrerLink) {
+            mainReferrerLink.href = newUrl;
+            mainReferrerLink.textContent = newUrl.slice(8, newUrl.length);
+        }
+    }
+
+    function checkForRefID() {
+        const yourRefID = localStorage.getItem('your_ref_id');
+        if (yourRefID) {
+            updateLink(yourRefID);
+            return true;
+        }
+        return false;
+    }
+
+    if (yourRefCode) {
+        updateLink(yourRefCode);
+    } else if (yourRefID) {
+        // It should request the referrer code from the API using the referrer ID, instead of using the referrer ID directly.
+        updateLink(yourRefID);
+    } else if (email) {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            if (checkForRefID() || attempts >= 15) {
+                clearInterval(interval);
+                if (attempts >= 15) {
+                    window.location.href = '/seekers';
+                }
+            }
+        }, 200);
+    } else {
+        window.location.href = '/seekers';
+    }
+});
+</script>
