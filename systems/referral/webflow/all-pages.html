@@ -23,7 +23,7 @@ async function fetchData(url) {
 
 // Function to validate referrer code with API
 async function validateRefCode(refCode) {
-    const url = `${_zigDataUrl}/items/zigchain_leads?filter[slug][_eq]=${refCode}&limit=1`;
+    const url = `${_zigDataUrl}/items/zigchain_leads?filter[ref_code][_eq]=${refCode}&filter[id][_eq]=${refCode}&limit=1`;
     const data = await fetchData(url);
     if (data && data.length === 1) {
         return data[0];
@@ -39,23 +39,17 @@ async function handleReferral() {
 
     if (zParam && zParam !== storedRefCode) {
         const validRef = await validateRefCode(zParam);
+        console.log('validRef:', validRef);
         if (validRef) {
             localStorage.setItem('ref_by', validRef.id);
             localStorage.setItem('ref_code_by', validRef.ref_code);
-            document.querySelector('input[name="ref_by"]').value = validRef.id;
-        } else {
-            // If zParam is not a valid code, assume it is an ID
-            localStorage.setItem('ref_by', zParam);
-            document.querySelector('input[name="ref_by"]').value = zParam;
         }
-    } else if (storedRefBy) {
-        document.querySelector('input[name="ref_by"]').value = storedRefBy;
     }
 }
 
 // Function to fetch user data by email
 async function fetchUserByEmail(email) {
-    const url = `${_zigDataUrl}/items/zigchain_leads?filter[email][_eq]=${email}`;
+    const url = `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${email}`;
     return await fetchData(url);
 }
 
@@ -68,15 +62,78 @@ async function handleUserId() {
     if (!yourRefCode && !yourRefID && email) {
         // TO DO: Create a webhook instead of fetching the user data by email for security reasons.
         const user = await fetchUserByEmail(email);
-        if (user && user.length === 1) {
-            localStorage.setItem('your_ref_id', user[0].id);
-            if (user[0].ref_code) {
-                localStorage.setItem('your_ref_code', user[0].ref_code);
+        if (user && user.id) {
+            localStorage.setItem('your_ref_id', user.id);
+            if (user.ref_code) {
+                localStorage.setItem('your_ref_code', user.ref_code);
             }
             localStorage.removeItem('email');
         }
     }
 }
+
+// Function to validate email
+function isValidEmailByRegex(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+// Function to save email in localStorage
+function saveEmail(email) {
+    if (isValidEmailByRegex(email)) {
+        localStorage.setItem('email', email);
+        localStorage.removeItem('your_ref_id');
+        localStorage.removeItem('your_ref_code');
+    }
+}
+
+// Function to send error report
+function errorReportTrigger() {
+    const email = localStorage.getItem('email');
+    const refBy = localStorage.getItem('ref_by');
+    const payload = {
+        email: email,
+        ref_by: refBy || ''
+    };
+
+    if (!email) {
+        return;
+    }
+
+    // silent create user by webhook
+    fetch('https://zignaly.directus.app/flows/trigger/a4544e21-eadd-47d7-86bd-0ce3ab6b29bb', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+
+    setTimeout(() => {
+        window.location.href = '/thanks';
+    }, 1000);
+}
+
+// Observe changes to the #form-error element
+const formErrorObserver = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+            const formErrorElement = document.getElementById('form-error');
+            if (formErrorElement && formErrorElement.style.display === 'block') {
+                errorReportTrigger();
+            }
+        }
+    }
+});
 
 // Execute the referral handler and user ID handler on page load
 window.addEventListener('load', async () => {

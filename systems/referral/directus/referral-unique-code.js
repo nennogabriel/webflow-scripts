@@ -1,5 +1,5 @@
-export default async function() {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+module.exports = async function(data) {
+  const characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz-";
 
   const nanoid = (length = 21) => {
     let result = "";

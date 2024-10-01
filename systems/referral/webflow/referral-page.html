@@ -31,9 +31,9 @@ document.addEventListener('DOMContentLoaded', function() {
         let attempts = 0;
         const interval = setInterval(() => {
             attempts++;
-            if (checkForRefID() || attempts >= 15) {
+            if (checkForRefID() || attempts >= 20) {
                 clearInterval(interval);
-                if (attempts >= 15) {
+                if (attempts >= 20) {
                     window.location.href = '/seekers';
                 }
             }
