@@ -1,17 +1,54 @@
 <script>
-// All functions should be defined in head for all pages
+// Function to validate email
+function isValidEmailByRegex(email) {
+    console.log('isValidEmailByRegex:', email);
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+// Debounce function
+function debounce(func, wait) {
+    console.log('debounce:', func, wait);
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+// Function to save email in localStorage
+function saveEmail(email) {
+    console.log('saveEmail:', email);
+    if (isValidEmailByRegex(email)) {
+        localStorage.setItem('email', email);
+    }
+}
+
+// Function to load ref_by from localStorage to input field
+function loadRefByToInput() {
+    console.log('loadRefByToInput');
+    const refBy = localStorage.getItem('ref_by');
+    if (refBy) {
+        const refByInput = document.getElementById('ref_by');
+        if (refByInput) {
+            refByInput.value = refBy;
+        }
+    }
+}
+
 // Add event listeners after DOM content is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    const formErrorElement = document.getElementById('form-error');
-    if (formErrorElement) {
-        formErrorObserver.observe(formErrorElement, { attributes: true });
-    }
+    console.log('DOMContentLoaded');
 
-    const emailField = document.getElementById('email-field');
+    const emailField = document.getElementById('email');
     if (emailField) {
         emailField.addEventListener('input', debounce(function() {
+            emailField.value = emailField.value.trim().toLowerCase();
             saveEmail(emailField.value);
         }, 300));
     }
+
+    // Load ref_by from localStorage to input field
+    loadRefByToInput();
 });
 </script>

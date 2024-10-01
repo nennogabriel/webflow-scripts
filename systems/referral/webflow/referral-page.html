@@ -1,43 +1,47 @@
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const yourRefID = localStorage.getItem('your_ref_id');
     const yourRefCode = localStorage.getItem('your_ref_code');
     const email = localStorage.getItem('email');
     const mainReferrerLink = document.getElementById('main-referrer-link');
+    const canonicalUrl = 'https://zigchain-landing-page.webflow.io';
 
-    function updateLink(refCode) {
-        const newUrl = `https://zigchain-landing-page.webflow.io/?z=${refCode}`;
+    const updateLink = function(refCode) {
+        const newUrl = `${canonicalUrl}/?z=${refCode}`;
         if (mainReferrerLink) {
             mainReferrerLink.href = newUrl;
             mainReferrerLink.textContent = newUrl.slice(8, newUrl.length);
         }
-    }
+    };
 
-    function checkForRefID() {
-        const yourRefID = localStorage.getItem('your_ref_id');
-        if (yourRefID) {
-            updateLink(yourRefID);
-            return true;
+    const fetchRefCodeById = async function(refID) {
+        const url = `${_zigDataUrl}/items/zigchain_leads/${refID}`;
+        try {
+            const response = await fetch(url);
+            if (response.status === 200) {
+                const data = await response.json();
+                return data.data.ref_code;
+            }
+        } catch (error) {
+            console.error('API call failed:', error);
         }
-        return false;
+        return null;
+    };
+
+    if (email) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     if (yourRefCode) {
         updateLink(yourRefCode);
     } else if (yourRefID) {
-        // It should request the referrer code from the API using the referrer ID, instead of using the referrer ID directly.
-        updateLink(yourRefID);
-    } else if (email) {
-        let attempts = 0;
-        const interval = setInterval(() => {
-            attempts++;
-            if (checkForRefID() || attempts >= 20) {
-                clearInterval(interval);
-                if (attempts >= 20) {
-                    window.location.href = '/seekers';
-                }
-            }
-        }, 200);
+        const refCode = await fetchRefCodeById(yourRefID);
+        if (refCode) {
+            localStorage.setItem('your_ref_code', refCode);
+            updateLink(refCode);
+        } else {
+            updateLink(yourRefID);
+        }
     } else {
         window.location.href = '/seekers';
     }
