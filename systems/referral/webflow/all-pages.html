@@ -1,143 +1,154 @@
 <script>
-const _zigDataUrl = 'https://zignaly.directus.app';
+(function() {
+    const _zigDataUrl = 'https://zignaly.directus.app';
 
-// Function to get the value of a query parameter by name
-function getQueryParam(param) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
-}
-
-// Function to fetch data from the API
-async function fetchData(url) {
-    try {
-        const response = await fetch(url);
-        if (response.status === 200) {
-            const data = await response.json();
-            return data.data;
-        }
-    } catch (error) {
-        console.error('API call failed:', error);
+    // Function to get the value of a query parameter by name
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
     }
-    return null;
-}
 
-// Function to validate referrer code with API
-async function validateRefCode(refCode) {
-    const url = `${_zigDataUrl}/items/zigchain_leads?filter[ref_code][_eq]=${refCode}&filter[id][_eq]=${refCode}&limit=1`;
-    const data = await fetchData(url);
-    if (data && data.length === 1) {
-        return data[0];
-    }
-    return null;
-}
-
-// Function to handle referral check and storage
-async function handleReferral() {
-    const zParam = getQueryParam('z');
-    const storedRefCode = localStorage.getItem('ref_code_by');
-    const storedRefBy = localStorage.getItem('ref_by');
-
-    if (zParam && zParam !== storedRefCode) {
-        const validRef = await validateRefCode(zParam);
-        console.log('validRef:', validRef);
-        if (validRef) {
-            localStorage.setItem('ref_by', validRef.id);
-            localStorage.setItem('ref_code_by', validRef.ref_code);
-        }
-    }
-}
-
-// Function to fetch user data by email
-async function fetchUserByEmail(email) {
-    const url = `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${email}`;
-    return await fetchData(url);
-}
-
-// Function to handle user ID check and storage
-async function handleUserId() {
-    const yourRefID = localStorage.getItem('your_ref_id');
-    const yourRefCode = localStorage.getItem('your_ref_code');
-    const email = localStorage.getItem('email');
-
-    if (!yourRefCode && !yourRefID && email) {
-        // TO DO: Create a webhook instead of fetching the user data by email for security reasons.
-        const user = await fetchUserByEmail(email);
-        if (user && user.id) {
-            localStorage.setItem('your_ref_id', user.id);
-            if (user.ref_code) {
-                localStorage.setItem('your_ref_code', user.ref_code);
+    // Function to fetch data from the API
+    async function fetchData(url) {
+        try {
+            const response = await fetch(url);
+            if (response.status === 200) {
+                const data = await response.json();
+                return data.data;
             }
-            localStorage.removeItem('email');
+        } catch (error) {
+            console.error('API call failed:', error);
         }
-    }
-}
-
-// Function to validate email
-function isValidEmailByRegex(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-}
-
-// Debounce function
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
-// Function to save email in localStorage
-function saveEmail(email) {
-    if (isValidEmailByRegex(email)) {
-        localStorage.setItem('email', email);
-        localStorage.removeItem('your_ref_id');
-        localStorage.removeItem('your_ref_code');
-    }
-}
-
-// Function to send error report
-function errorReportTrigger() {
-    const email = localStorage.getItem('email');
-    const refBy = localStorage.getItem('ref_by');
-    const payload = {
-        email: email,
-        ref_by: refBy || ''
-    };
-
-    if (!email) {
-        return;
+        return null;
     }
 
-    // silent create user by webhook
-    fetch('https://zignaly.directus.app/flows/trigger/a4544e21-eadd-47d7-86bd-0ce3ab6b29bb', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    })
+    // Function to validate referrer code with API
+    async function validateRefCode(refCode) {
+        const url = `${_zigDataUrl}/items/zigchain_leads?filter[ref_code][_eq]=${refCode}&filter[id][_eq]=${refCode}&limit=1`;
+        const data = await fetchData(url);
+    }
 
-    setTimeout(() => {
-        window.location.href = '/thanks';
-    }, 1000);
-}
+    // Function to handle referral check and storage
+    async function handleReferral() {
+        const zParam = getQueryParam('z');
+        const storedRefCode = localStorage.getItem('ref_code_by');
+        const storedRefBy = localStorage.getItem('ref_by');
 
-// Observe changes to the #form-error element
-const formErrorObserver = new MutationObserver((mutationsList) => {
-    for (const mutation of mutationsList) {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-            const formErrorElement = document.getElementById('form-error');
-            if (formErrorElement && formErrorElement.style.display === 'block') {
-                errorReportTrigger();
+        if (zParam && zParam !== storedRefCode) {
+            const validRef = await validateRefCode(zParam);
+            console.log('validRef:', validRef);
+            if (validRef) {
+                localStorage.setItem('ref_by', validRef.id);
+                localStorage.setItem('ref_code_by', validRef.ref_code);
             }
         }
     }
-});
+
+    // Function to fetch user data by email
+    async function fetchUserByEmail(email) {
+        const url = `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${email}`;
+        return await fetchData(url);
+    }
+
+    // Function to handle user ID check and storage
+    async function handleUserId() {
+        const yourRefID = localStorage.getItem('your_ref_id');
+        const yourRefCode = localStorage.getItem('your_ref_code');
+        const email = localStorage.getItem('email');
+
+        if (!yourRefCode && !yourRefID && email) {
+            // TO DO: Create a webhook instead of fetching the user data by email for security reasons.
+            const user = await fetchUserByEmail(email);
+            if (user && user.id) {
+                localStorage.setItem('your_ref_id', user.id);
+                if (user.ref_code) {
+                    localStorage.setItem('your_ref_code', user.ref_code);
+                }
+                localStorage.removeItem('email');
+            }
+        }
+    }
+
+    // Function to validate email
+    function isValidEmailByRegex(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    // Debounce function
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    // Function to save email in localStorage
+    function saveEmail(email) {
+        if (isValidEmailByRegex(email)) {
+            localStorage.setItem('email', email);
+            localStorage.removeItem('your_ref_id');
+            localStorage.removeItem('your_ref_code');
+        }
+    }
+
+    // Function to send error report
+    function errorReportTrigger() {
+        const email = localStorage.getItem('email');
+        const refBy = localStorage.getItem('ref_by');
+        const payload = {
+            email: email,
+            ref_by: refBy || ''
+        };
+
+        if (!email) {
+            return;
+        }
+
+        // silent create user by webhook
+        fetch('${_zigDataUrl}/flows/trigger/f2f79160-0385-4b53-9d54-f952b1305058', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+
+        setTimeout(() => {
+            window.location.href = '/thanks';
+        }, 1000);
+    }
+
+    // Observe changes to the #form-error element
+    const formErrorObserver = new MutationObserver((mutationsList) => {
+        for (const mutation of mutationsList) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                const formErrorElement = document.getElementById('form-error');
+                if (formErrorElement && formErrorElement.style.display === 'block') {
+                    errorReportTrigger();
+                }
+            }
+        }
+    });
+
+    // Export variables and functions to the window object
+    window._zigDataUrl = _zigDataUrl;
+    window.getQueryParam = getQueryParam;
+    window.fetchData = fetchData;
+    window.validateRefCode = validateRefCode;
+    window.handleReferral = handleReferral;
+    window.fetchUserByEmail = fetchUserByEmail;
+    window.handleUserId = handleUserId;
+    window.isValidEmailByRegex = isValidEmailByRegex;
+    window.debounce = debounce;
+    window.saveEmail = saveEmail;
+    window.errorReportTrigger = errorReportTrigger;
+})();
 
 // Execute the referral handler and user ID handler on page load
 window.addEventListener('load', async () => {
-    await handleReferral();
-    await handleUserId();
+    await window.handleReferral();
+    await window.handleUserId();
 });
 </script>
