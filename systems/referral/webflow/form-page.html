@@ -1,15 +1,13 @@
 <script>
 // Function to validate email
 function isValidEmailByRegex(email) {
-    console.log('isValidEmailByRegex:', email);
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 }
 
 // Debounce function
 function debounce(func, wait) {
-    console.log('debounce:', func, wait);
-    let timeout;
+        let timeout;
     return function(...args) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
@@ -18,29 +16,70 @@ function debounce(func, wait) {
 
 // Function to save email in localStorage
 function saveEmail(email) {
-    console.log('saveEmail:', email);
-    if (isValidEmailByRegex(email)) {
+        if (isValidEmailByRegex(email)) {
         localStorage.setItem('email', email);
     }
 }
 
 // Function to load ref_by from localStorage to input field
 function loadRefByToInput() {
-    console.log('loadRefByToInput');
-    const refBy = localStorage.getItem('ref_by');
+        const refBy = localStorage.getItem('ref_by');
     if (refBy) {
         const refByInput = document.getElementById('ref_by');
         if (refByInput) {
-            refByInput.value = refBy;
+            refByInput.value = `"${refBy}"`; // the value should be wrapped in double quotes to be valid value on webflow
         }
     }
 }
 
+// Function to send error report
+function sendErrorReport(email, refBy) {
+    const url = `${_zigDataUrl}/items/zigchain_leads`;
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer mwkhcns1mhXZ03f1diyHnFL-s4xlgmdQ'
+    };
+
+    const prePayload = {
+        email: email,
+        ref_by: refBy
+    };
+
+    // Filter out empty values
+    const payload = Object.fromEntries(
+        Object.entries(prePayload).filter(([_, v]) => v)
+    );
+
+    fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        // redirect to the thanks page
+        if (response.ok) {
+            window.location.href = '/thanks';
+        }
+    })
+}
+
+// Observe changes to the #form-error element
+const formErrorObserver = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+            const formErrorElement = document.getElementById('form-error');
+            if (formErrorElement && formErrorElement.style.display === 'block') {
+                const email = document.getElementById('email').value;
+                const refBy = document.getElementById('ref_by').value;
+                sendErrorReport(email, refBy);
+            }
+        }
+    }
+});
+
 // Add event listeners after DOM content is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOMContentLoaded');
-
-    const emailField = document.getElementById('email');
+        const emailField = document.getElementById('email');
     if (emailField) {
         emailField.addEventListener('input', debounce(function() {
             emailField.value = emailField.value.trim().toLowerCase();
@@ -50,5 +89,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load ref_by from localStorage to input field
     loadRefByToInput();
+
+    // Observe the form-error element
+    const formErrorElement = document.getElementById('form-error');
+    if (formErrorElement) {
+        formErrorObserver.observe(formErrorElement, { attributes: true });
+    }
 });
 </script>

@@ -3,15 +3,13 @@ const _zigDataUrl = 'https://zignaly.directus.app';
 
 // Function to get the value of a query parameter by name
 function getQueryParam(param) {
-    console.log('getQueryParam:', param);
-    const urlParams = new URLSearchParams(window.location.search);
+        const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
 }
 
 // Function to fetch data from the API
 async function fetchData(url) {
-    console.log('fetchData:', url);
-    try {
+        try {
         const response = await fetch(url);
         if (response.status === 200) {
             const data = await response.json();
@@ -25,8 +23,7 @@ async function fetchData(url) {
 
 // Function to validate referrer code with API
 async function validateRefCode(refCode) {
-    console.log('validateRefCode:', refCode);
-
+    
     // First attempt: validate by ref_code
     const urlByRefCode = `${_zigDataUrl}/items/zigchain_leads/?filter[ref_code][_eq]=${refCode}&limit=1`;
     let data = await fetchData(urlByRefCode);
@@ -42,16 +39,14 @@ async function validateRefCode(refCode) {
 
 // Function to handle referral check and storage
 async function handleReferral() {
-    console.log('handleReferral');
-    const zParam = getQueryParam('z');
+        const zParam = getQueryParam('z');
     const storedRefCode = localStorage.getItem('ref_code_by');
     const storedRefBy = localStorage.getItem('ref_by');
 
     if (zParam && zParam !== storedRefCode) {
         const response = await validateRefCode(zParam);
         const validRef = response && response[0];
-        console.log('validRef:', validRef);
-        if (validRef ) {
+                if (validRef ) {
             localStorage.setItem('ref_by', validRef.id);
             localStorage.setItem('ref_code_by', validRef.ref_code);
         }
@@ -60,7 +55,6 @@ async function handleReferral() {
 
 // Function to fetch user data by email
 async function fetchUserByEmail(email) {
-    console.log('fetchUserByEmail:', email);
     const url = `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${email}`;
     const response = await fetch(url);
     const data = await response.json();
@@ -69,16 +63,14 @@ async function fetchUserByEmail(email) {
 
 // Function to handle user ID check and storage
 async function handleUserId() {
-    console.log('handleUserId');
     const yourRefID = localStorage.getItem('your_ref_id');
     const yourRefCode = localStorage.getItem('your_ref_code');
     const email = localStorage.getItem('email');
 
-    if (email.includes('@')) {
+    if (email && email.includes('@')) {
         localStorage.removeItem('email');
         const user = await fetchUserByEmail(email);
-        console.log('user:', user);
-        if (user && user.id) {
+                if (user && user.id) {
             localStorage.setItem('your_ref_id', user.id);
             if (user.ref_code) {
                 localStorage.setItem('your_ref_code', user.ref_code);
@@ -89,8 +81,7 @@ async function handleUserId() {
 
 // Execute the referral handler and user ID handler on page load
 window.addEventListener('load', async () => {
-    console.log('Page loaded');
-    await handleReferral();
+        await handleReferral();
     await handleUserId();
 });
 </script>

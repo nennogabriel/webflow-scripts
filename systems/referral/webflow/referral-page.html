@@ -4,17 +4,20 @@ document.addEventListener('DOMContentLoaded', async function() {
     const yourRefCode = localStorage.getItem('your_ref_code');
     const email = localStorage.getItem('email');
     const mainReferrerLink = document.getElementById('main-referrer-link');
-    const canonicalUrl = 'https://zigchain-landing-page.webflow.io';
+    const canonicalUrl = `https://${window.location.hostname}`;
+    const yourShareLink = `${canonicalUrl}/?z=${yourRefCode || yourRefID}`;
 
-    const updateLink = function(refCode) {
+    // Function to update the main referrer link
+    function updateMainReferrerLink(refCode) {
         const newUrl = `${canonicalUrl}/?z=${refCode}`;
         if (mainReferrerLink) {
             mainReferrerLink.href = newUrl;
-            mainReferrerLink.textContent = newUrl.slice(8, newUrl.length);
+            mainReferrerLink.textContent = newUrl.slice(8);
         }
-    };
+    }
 
-    const fetchRefCodeById = async function(refID) {
+    // Function to fetch ref code by ID
+    async function fetchRefCodeById(refID) {
         const url = `${_zigDataUrl}/items/zigchain_leads/${refID}`;
         try {
             const response = await fetch(url);
@@ -26,24 +29,67 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.error('API call failed:', error);
         }
         return null;
-    };
-
-    if (email) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    if (yourRefCode) {
-        updateLink(yourRefCode);
-    } else if (yourRefID) {
-        const refCode = await fetchRefCodeById(yourRefID);
-        if (refCode) {
-            localStorage.setItem('your_ref_code', refCode);
-            updateLink(refCode);
-        } else {
-            updateLink(yourRefID);
+    // Function to update share link attributes
+    function updateShareLinkAttributes(link, yourShareLink) {
+        const baseUrl = link.getAttribute('href');
+        const newUrl = baseUrl.replace('#', yourShareLink);
+        link.href = newUrl;
+        link.setAttribute('data-url', yourShareLink);
+        link.setAttribute('data-fallback-url', newUrl);
+    }
+
+    // Function to configure share button
+    function configureShareButton(button) {
+        const url = button.getAttribute('data-url');
+        const fallbackUrl = button.getAttribute('data-fallback-url');
+
+        button.addEventListener('click', async () => {
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'ZigChain',
+                        text: 'Check out ZigChain and start earning!',
+                        url: url,
+                    });
+                } catch (error) {
+                    // window.open(fallbackUrl, '_blank');
+                }
+            } else {
+                window.open(fallbackUrl, '_blank');
+            }
+        });
+    }
+
+    // Main logic to handle referrer link and share links/buttons
+    async function initialize() {
+        if (email) {
+            await new Promise(resolve => setTimeout(resolve, 500)); // wait for yourRefCode to be set
         }
-    } else {
-        window.location.href = '/seekers';
+
+        if (yourRefCode) {
+            updateMainReferrerLink(yourRefCode);
+        } else if (yourRefID) {
+            const refCode = await fetchRefCodeById(yourRefID);
+            if (refCode) {
+                localStorage.setItem('your_ref_code', refCode);
+                updateMainReferrerLink(refCode);
+            } else {
+                updateMainReferrerLink(yourRefID);
+            }
+        } else {
+            window.location.href = '/seekers';
+        }
+
+        const shareLinks = document.querySelectorAll('.share-link');
+        shareLinks.forEach(link => {
+            updateShareLinkAttributes(link, yourShareLink);
+            configureShareButton(link);
+        });
     }
+
+    // Initialize the script
+    initialize();
 });
 </script>
