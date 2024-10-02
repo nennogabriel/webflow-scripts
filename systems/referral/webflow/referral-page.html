@@ -3,16 +3,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     const yourRefID = localStorage.getItem('your_ref_id');
     const yourRefCode = localStorage.getItem('your_ref_code');
     const email = localStorage.getItem('email');
-    const mainReferrerLink = document.getElementById('main-referrer-link');
     const canonicalUrl = `https://${window.location.hostname}`;
     const yourShareLink = `${canonicalUrl}/?z=${yourRefCode || yourRefID}`;
 
     // Function to update the main referrer link
     function updateMainReferrerLink(refCode) {
+        const mainReferrerLink = document.getElementById('main-referrer-link');
+        const mainReferrerLinkText = document.getElementById('main-referrer-link-text');
         const newUrl = `${canonicalUrl}/?z=${refCode}`;
         if (mainReferrerLink) {
             mainReferrerLink.href = newUrl;
-            mainReferrerLink.textContent = newUrl.slice(8);
+            mainReferrerLinkText.textContent = newUrl.slice(8);
         }
     }
 
@@ -45,21 +46,41 @@ document.addEventListener('DOMContentLoaded', async function() {
         const url = button.getAttribute('data-url');
         const fallbackUrl = button.getAttribute('data-fallback-url');
 
-        button.addEventListener('click', async () => {
+        if (button.classList.contains('other')) {
             if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: 'ZigChain',
-                        text: 'Check out ZigChain and start earning!',
-                        url: url,
-                    });
-                } catch (error) {
-                    // window.open(fallbackUrl, '_blank');
-                }
-            } else {
-                window.open(fallbackUrl, '_blank');
+                button.style.display = 'inline-block';
+                button.addEventListener('click', async () => {
+                    try {
+                        await navigator.share({
+                            title: 'ZigChain',
+                            text: 'Check out ZigChain and start earning!',
+                            url: url,
+                        });
+                    } catch (error) {
+                        window.open(fallbackUrl, '_blank');
+                    }
+                });
             }
-        });
+        }
+    }
+
+    // Function to copy text to clipboard
+    function copyToClipboard(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+    }
+
+    // Function to handle main referrer link click
+    function handleMainReferrerLinkClick(event) {
+        event.preventDefault();
+        const mainReferrerLink = event.currentTarget;
+        const href = mainReferrerLink.href;
+        copyToClipboard(href);
+        alert('Link copied to clipboard!');
     }
 
     // Main logic to handle referrer link and share links/buttons
@@ -80,6 +101,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         } else {
             window.location.href = '/seekers';
+        }
+
+        const mainReferrerLink = document.getElementById('main-referrer-link');
+        if (mainReferrerLink) {
+            mainReferrerLink.addEventListener('click', handleMainReferrerLinkClick);
         }
 
         const shareLinks = document.querySelectorAll('.share-link');
