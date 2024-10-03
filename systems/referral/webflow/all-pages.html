@@ -3,13 +3,13 @@ const _zigDataUrl = 'https://zignaly.directus.app';
 
 // Function to get the value of a query parameter by name
 function getQueryParam(param) {
-        const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
 }
 
 // Function to fetch data from the API
 async function fetchData(url) {
-        try {
+    try {
         const response = await fetch(url);
         if (response.status === 200) {
             const data = await response.json();
@@ -39,14 +39,14 @@ async function validateRefCode(refCode) {
 
 // Function to handle referral check and storage
 async function handleReferral() {
-        const zParam = getQueryParam('z');
+    const zParam = getQueryParam('z');
     const storedRefCode = localStorage.getItem('ref_code_by');
     const storedRefBy = localStorage.getItem('ref_by');
 
     if (zParam && zParam !== storedRefCode) {
         const response = await validateRefCode(zParam);
         const validRef = response && response[0];
-                if (validRef ) {
+        if (validRef ) {
             localStorage.setItem('ref_by', validRef.id);
             localStorage.setItem('ref_code_by', validRef.ref_code);
         }
@@ -70,7 +70,7 @@ async function handleUserId() {
     if (email && email.includes('@')) {
         localStorage.removeItem('email');
         const user = await fetchUserByEmail(email);
-                if (user && user.id) {
+        if (user && user.id) {
             localStorage.setItem('your_ref_id', user.id);
             if (user.ref_code) {
                 localStorage.setItem('your_ref_code', user.ref_code);
@@ -81,7 +81,7 @@ async function handleUserId() {
 
 // Execute the referral handler and user ID handler on page load
 window.addEventListener('load', async () => {
-        await handleReferral();
+    await handleReferral();
     await handleUserId();
 });
 </script>

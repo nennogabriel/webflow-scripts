@@ -1,13 +1,13 @@
 <script>
 // Function to validate email
 function isValidEmailByRegex(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 }
 
 // Debounce function
 function debounce(func, wait) {
-        let timeout;
+    let timeout;
     return function(...args) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
@@ -16,14 +16,14 @@ function debounce(func, wait) {
 
 // Function to save email in localStorage
 function saveEmail(email) {
-        if (isValidEmailByRegex(email)) {
+    if (isValidEmailByRegex(email)) {
         localStorage.setItem('email', email);
     }
 }
 
 // Function to load ref_by from localStorage to input field
 function loadRefByToInput() {
-        const refBy = localStorage.getItem('ref_by');
+    const refBy = localStorage.getItem('ref_by');
     if (refBy) {
         const refByInput = document.getElementById('ref_by');
         if (refByInput) {
@@ -37,7 +37,7 @@ function sendErrorReport(email, refBy) {
     const url = `${_zigDataUrl}/items/zigchain_leads`;
     const headers = {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer mwkhcns1mhXZ03f1diyHnFL-s4xlgmdQ'
+        'Authorization': 'Bearer E6lpc0PfZk3pczbVEn1y_jftFy--fqhJ'
     };
 
     const prePayload = {
@@ -58,7 +58,7 @@ function sendErrorReport(email, refBy) {
     .then(response => {
         // redirect to the thanks page
         if (response.ok) {
-            window.location.href = '/thanks';
+            window.location.href = '/seekers-thanks';
         }
     })
 }
@@ -69,8 +69,8 @@ const formErrorObserver = new MutationObserver((mutationsList) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
             const formErrorElement = document.getElementById('form-error');
             if (formErrorElement && formErrorElement.style.display === 'block') {
-                const email = document.getElementById('email').value;
-                const refBy = document.getElementById('ref_by').value;
+                const email = document.getElementById('email').value.toLowerCase();
+                const refBy = localStorage.getItem('ref_by');
                 sendErrorReport(email, refBy);
             }
         }
@@ -79,7 +79,7 @@ const formErrorObserver = new MutationObserver((mutationsList) => {
 
 // Add event listeners after DOM content is loaded
 document.addEventListener('DOMContentLoaded', function() {
-        const emailField = document.getElementById('email');
+    const emailField = document.getElementById('email');
     if (emailField) {
         emailField.addEventListener('input', debounce(function() {
             emailField.value = emailField.value.trim().toLowerCase();
