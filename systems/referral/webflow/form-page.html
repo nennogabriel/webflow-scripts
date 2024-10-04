@@ -73,7 +73,8 @@ function checkForRefCodeAndRedirect() {
 
 // Function to fetch user data by email
 async function fetchUserByEmail(email) {
-    const url = `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${email}`;
+    const encodedEmail = encodeURIComponent(email);
+    const url = `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${encodedEmail}`;
     const response = await fetch(url);
     const data = await response.json();
     return data[0] || null;
@@ -100,7 +101,10 @@ const formErrorObserver = new MutationObserver((mutationsList) => {
                 const email = document.getElementById('email').value.toLowerCase();
                 const refBy = localStorage.getItem('ref_by');
                 sendErrorReport(email, refBy);
-                handleUserId(email); // Check if email exists and handle user ID
+                setTimeout(() => {
+                    handleUserId(email); // Check if email exists and handle user ID
+                    saveEmail(email); // Save email to localStorage
+                }, 2000);
             }
         }
     }
