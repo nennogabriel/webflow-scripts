@@ -63,6 +63,34 @@ function sendErrorReport(email, refBy) {
     })
 }
 
+// Function to check for "your_ref_code" in localStorage and redirect
+function checkForRefCodeAndRedirect() {
+    const yourRefCode = localStorage.getItem('your_ref_code');
+    if (yourRefCode) {
+        window.location.href = '/seekers-get-your-code';
+    }
+}
+
+// Function to fetch user data by email
+async function fetchUserByEmail(email) {
+    const url = `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${email}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    return data[0] || null;
+}
+
+// Function to handle user ID check and storage
+async function handleUserId(email) {
+    const user = await fetchUserByEmail(email);
+    if (user && user.id) {
+        localStorage.setItem('your_ref_id', user.id);
+        if (user.ref_code) {
+            localStorage.setItem('your_ref_code', user.ref_code);
+        }
+        window.location.href = '/seekers-get-your-code';
+    }
+}
+
 // Observe changes to the #form-error element
 const formErrorObserver = new MutationObserver((mutationsList) => {
     for (const mutation of mutationsList) {
@@ -72,6 +100,7 @@ const formErrorObserver = new MutationObserver((mutationsList) => {
                 const email = document.getElementById('email').value.toLowerCase();
                 const refBy = localStorage.getItem('ref_by');
                 sendErrorReport(email, refBy);
+                handleUserId(email); // Check if email exists and handle user ID
             }
         }
     }
@@ -95,5 +124,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (formErrorElement) {
         formErrorObserver.observe(formErrorElement, { attributes: true });
     }
+
+    // Check for "your_ref_code" in localStorage and redirect if found
+    checkForRefCodeAndRedirect();
 });
 </script>

@@ -1,0 +1,14 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cleanYourCodeButton = document.getElementById('clean-your-code');
+    if (cleanYourCodeButton) {
+        cleanYourCodeButton.addEventListener('click', function() {
+            // Remove your_ref_code and your_ref_id from localStorage
+            localStorage.removeItem('your_ref_code');
+            localStorage.removeItem('your_ref_id');
+            // Redirect the user to the /seekers page
+            window.location.href = '/seekers';
+        });
+    }
+});
+</script>
