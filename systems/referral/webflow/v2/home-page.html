@@ -1,0 +1,39 @@
+<script>
+  // run this code in a closure to avoid polluting the global scope
+  (function() {
+    // verify if the domain 
+    const _zigDataUrl = 'https://zignaly.directus.app';
+
+    // Function to get query parameter by name
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Function to validate the referral code and get ref_id
+    async function getReferralData(code) {
+      // call the API to validate the code
+      const response = await fetch(`${_zigDataUrl}/items/zigchain_leads/?filter[ref_code][_eq]=${code}&limit=1`);
+      const { data } = await response.json();
+      if (data && data.length > 0) {
+        return { ref_code: code, ref_id: data[0].id };
+      }
+      return null;
+    }
+
+    // wait the page is fully loaded
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Get the referral code from the query parameter
+      const refZQuery = getQueryParam('z');
+      const storedRefCode = localStorage.getItem('ref_code');
+      if (refZQuery && refZQuery !== storedRefCode) {
+        const referralData = await getReferralData(refZQuery);
+        if (referralData) {
+          localStorage.setItem('ref_code', referralData.ref_code);
+          localStorage.setItem('ref_id', referralData.ref_id);
+        }
+      }
+    });
+    
+  })(); // end of closure
+</script>

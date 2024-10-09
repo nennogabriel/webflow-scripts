@@ -42,7 +42,7 @@ function sendErrorReport(email, refBy) {
 
     const prePayload = {
         email: email,
-        ref_by: refBy
+        ref_by: refBy,
     };
 
     // Filter out empty values
@@ -58,7 +58,7 @@ function sendErrorReport(email, refBy) {
     .then(response => {
         // redirect to the thanks page
         if (response.ok) {
-            window.location.href = '/seekers-thanks';
+            // window.location.href = '/seekers-thanks';
         }
     })
 }
@@ -67,7 +67,7 @@ function sendErrorReport(email, refBy) {
 function checkForRefCodeAndRedirect() {
     const yourRefCode = localStorage.getItem('your_ref_code');
     if (yourRefCode) {
-        window.location.href = '/seekers-get-your-code';
+        // window.location.href = '/seekers-get-your-code';
     }
 }
 
@@ -88,7 +88,7 @@ async function handleUserId(email) {
         if (user.ref_code) {
             localStorage.setItem('your_ref_code', user.ref_code);
         }
-        window.location.href = '/seekers-get-your-code';
+        // window.location.href = '/seekers-get-your-code';
     }
 }
 
@@ -101,9 +101,22 @@ const formErrorObserver = new MutationObserver((mutationsList) => {
                 const email = document.getElementById('email').value.toLowerCase();
                 const refBy = localStorage.getItem('ref_by');
                 sendErrorReport(email, refBy);
-                setTimeout(() => {
-                    handleUserId(email); // Check if email exists and handle user ID
+                setTimeout(async () => {
+                    await handleUserId(email); // Check if email exists and handle user ID
                     saveEmail(email); // Save email to localStorage
+                }, 1000);
+                setTimeout(() => {
+                    // change #form-error.error to display: block
+                    const elErrorTXTError = document.getElementById('form-error-txt-error');
+                    elErrorTXTError.style.display = 'block';
+
+                    // change #form-error.registering to display: none
+                    const elRegistering = document.getElementById('form-error-txt-registering');
+                    elRegistering.style.display = 'none';
+                    setTimeout(() => {
+                        // reload the page
+                        window.location.reload();
+                    }, 500); 
                 }, 2000);
             }
         }
@@ -131,5 +144,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check for "your_ref_code" in localStorage and redirect if found
     checkForRefCodeAndRedirect();
+
+    // Observer for #email-form-success
+    const formSuccessObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.target.style.display !== 'none') {
+                // Redirect to /seekers-thanks
+                setTimeout(() => {
+                    // window.location.href = '/seekers-thanks';
+                }, 1000);
+            }
+        });
+    });
+
+    const formSuccessElement = document.querySelector('#email-form-success');
+    if (formSuccessElement) {
+        formSuccessObserver.observe(formSuccessElement, { attributes: true, attributeFilter: ['style'] });
+    }
 });
 </script>

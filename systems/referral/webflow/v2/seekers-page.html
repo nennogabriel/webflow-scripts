@@ -1,0 +1,122 @@
+<script>
+  // run this code in a closure to avoid polluting the global scope
+  (function() {
+    // verify if the domain 
+    const _zigDataUrl = 'https://zignaly.directus.app';
+    const AUTH_TOKEN = 'E6lpc0PfZk3pczbVEn1y_jftFy--fqhJ'; // Replace with your actual token
+
+    // Function to validate email format
+    function isValidEmail(email) {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailPattern.test(email);
+    }
+
+    // Function to fetch data from a given URL
+    async function fetchData(url) {
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.data) {
+          return data.data;
+        }
+        return data;
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        return null;
+      }
+    }
+
+    // Function to get referral data by email
+    async function getReferralDataByEmail(email) {
+      const encodedEmail = encodeURIComponent(email);
+      const url = `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${encodedEmail}`;
+      const data = await fetchData(url);
+      return data ? data[0] : null;
+    }
+
+    // Function to create a new referral record
+    async function createReferralRecord(email, refById) {
+      const url = `${_zigDataUrl}/items/zigchain_leads`;
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AUTH_TOKEN}`
+      };
+      const prePayload = {
+        email: email,
+        ref_by: refById,
+      };
+
+      // Filter out empty values
+      const payload = Object.fromEntries(
+        Object.entries(prePayload).filter(([_, v]) => v)
+      );
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : {};
+        console.log('New referral record:', data);
+        return data;
+      } catch (error) {
+        console.error('Failed to create referral record:', error);
+        return null;
+      }
+    }
+
+    // wait the page is fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('seekers-form'); // Replace with your form ID
+      form.addEventListener('submit', async function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        const emailInput = document.getElementById('email'); // Replace with your email input ID
+        const email = emailInput.value;
+
+        if (isValidEmail(email)) {
+          let referralData = await getReferralDataByEmail(email);
+          if (referralData && referralData.id) {
+            // try to get ref_code from getReferralDataByEmail, if ref_code is not found, wait 3 seconds and try again for 60 seconds
+            let count = 0;
+            while (!referralData.ref_code && count < 20) {
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              referralData = await getReferralDataByEmail(email);
+              count++;
+            }
+            if (referralData.ref_code) {
+              localStorage.setItem('your_ref_code', referralData.ref_code);
+              window.location.href = '/seekers-get-your-code';
+            } else {
+              console.error('Failed to retrieve ref_code after multiple attempts');
+            }
+          } else {
+            const refById = localStorage.getItem('ref_id'); // Get ref_id from localStorage
+            let newReferralData = await createReferralRecord(email, refById);
+
+            let count = 0;
+            while (!newReferralData.ref_code && count < 20) {
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              newReferralData = await getReferralDataByEmail(email);
+              count++;
+            }
+            if (newReferralData.ref_code) {
+              localStorage.setItem('your_ref_code', newReferralData.ref_code);
+              window.location.href = '/seekers-share';
+            } else {
+              console.error('Failed to retrieve ref_code after multiple attempts');
+            }
+          }
+        } else {
+          alert('Please enter a valid email address.');
+        }
+      });
+    });
+    
+  })(); // end of closure
+</script>

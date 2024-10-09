@@ -69,7 +69,7 @@ async function handleUserId() {
     const email = localStorage.getItem('email');
 
     if (email && email.includes('@')) {
-        localStorage.removeItem('email');
+        // localStorage.removeItem('email');
         const user = await fetchUserByEmail(email);
         if (user && user.id) {
             localStorage.setItem('your_ref_id', user.id);

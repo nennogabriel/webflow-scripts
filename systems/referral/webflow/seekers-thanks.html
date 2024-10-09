@@ -1,0 +1,11 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const getReferralLinkButton = document.getElementById('get-referral-link');
+    if (getReferralLinkButton) {
+        getReferralLinkButton.disabled = true; // Desativa o botão inicialmente
+        setTimeout(function() {
+            getReferralLinkButton.disabled = false; // Ativa o botão após 3 segundos
+        }, 2000);
+    }
+});
+</script>

@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Function to update share link attributes
     function updateShareLinkAttributes(link, yourShareLink) {
         const baseUrl = link.getAttribute('href');
-        const newUrl = baseUrl.replace('#', yourShareLink);
+        const newUrl = baseUrl.replace('##', yourShareLink);
         link.href = newUrl;
         link.setAttribute('data-url', yourShareLink);
         link.setAttribute('data-fallback-url', newUrl);
@@ -83,16 +83,52 @@ document.addEventListener('DOMContentLoaded', async function() {
         alert('Link copied to clipboard!');
     }
 
+
+    async function fetchUserByEmail(email) {
+        const encodedEmail = encodeURIComponent(email);
+        const url = `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${encodedEmail}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return data[0] || null;
+    }
+
+    // Function to wait for yourRefCode to be set
+    async function waitForRefCode(timeout) {
+        const start = Date.now();
+        localStorage.removeItem('your_ref_code');
+        localStorage.removeItem('your_ref_id');
+        while (Date.now() - start < timeout) {
+            const yourRefCode = localStorage.getItem('your_ref_code');
+            if (yourRefCode) {
+                const user = await fetchUserByEmail(email);
+                if (user && user.id) {
+                    localStorage.setItem('your_ref_id', user.id);
+                }
+                if (user && user.ref_code) {
+                    localStorage.setItem('your_ref_code', user.ref_code);
+                    localStorage.removeItem('email');
+                    window.location.reload();
+                }            
+                return yourRefCode;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000)); // wait for 2 seconds
+        }
+        return null;
+    }
+
     // Main logic to handle referrer link and share links/buttons
     async function initialize() {
-        if (email) {
-            await new Promise(resolve => setTimeout(resolve, 500)); // wait for yourRefCode to be set
+        let refCode = yourRefCode;
+
+        if (email && !refCode) {
+            refCode = await waitForRefCode(60000); // wait for up to 1 minute
+            localStorage.removeItem('email');
         }
 
-        if (yourRefCode) {
-            updateMainReferrerLink(yourRefCode);
+        if (refCode) {
+            updateMainReferrerLink(refCode);
         } else if (yourRefID) {
-            const refCode = await fetchRefCodeById(yourRefID);
+            refCode = await fetchRefCodeById(yourRefID);
             if (refCode) {
                 localStorage.setItem('your_ref_code', refCode);
                 updateMainReferrerLink(refCode);
