@@ -1,0 +1,121 @@
+<script>
+  // run this code in a closure to avoid polluting the global scope
+  (function() {
+    // wait the page is fully loaded
+    document.addEventListener('DOMContentLoaded', async function() {
+      const yourRefCode = localStorage.getItem('your_ref_code');
+      const canonicalUrl = `https://${window.location.hostname}`;
+      const _zigDataUrl = 'https://zignaly.directus.app';
+
+      // Function to validate the referral code
+      async function validateReferralCode(refCode) {
+        const url = `${_zigDataUrl}/items/zigchain_leads/?filter[ref_code][_eq]=${refCode}&limit=1`;
+        try {
+          const response = await fetch(url);
+          const { data } = await response.json();
+          return data && data.length > 0;
+        } catch (error) {
+          console.error('API call failed:', error);
+          return false;
+        }
+      }
+
+      // Function to update the main referrer link
+      function updateMainReferrerLink(refCode) {
+        const mainReferrerLink = document.getElementById('main-referrer-link');
+        const mainReferrerLinkText = document.getElementById('main-referrer-link-text');
+        const newUrl = `${canonicalUrl}/?z=${refCode}`;
+        if (mainReferrerLink) {
+          mainReferrerLink.href = newUrl;
+          mainReferrerLinkText.textContent = newUrl.slice(8);
+        }
+      }
+
+      // Function to copy text to clipboard
+      function copyToClipboard(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+
+      // Function to configure share button
+      function configureShareButton(button) {
+        const url = `${canonicalUrl}/?z=${yourRefCode}`;
+        const fallbackUrl = button.href;
+        const urlEncoded = encodeURIComponent(url);
+
+        // replace ## with the actual URL
+        button.href = button.href.replace('##', urlEncoded);
+
+        if (button.classList.contains('other')) {
+          if (navigator.share) {
+            button.style.display = 'inline-block';
+            button.addEventListener('click', async () => {
+              try {
+                await navigator.share({
+                  title: 'ZigChain',
+                  text: 'Check out ZigChain and start earning!',
+                  url: url,
+                });
+              } catch (error) {
+                console.error('Error sharing:', error);
+                // window.open(fallbackUrl, '_blank');
+              }
+            });
+          }
+        }
+      }
+
+      // Main logic to handle referrer link and share links/buttons
+      async function initialize() {
+        let refCode = yourRefCode;
+
+        // validate ref code
+        if (refCode) {
+          const isValid = await validateReferralCode(refCode);
+          if (!isValid) {
+            refCode = null;
+            localStorage.removeItem('your_ref_code');
+            window.location.href = '/seekers';  
+          }
+        }
+
+        if (refCode) {
+          updateMainReferrerLink(refCode);
+        } else {
+          window.location.href = '/seekers';
+        }
+
+        const mainReferrerLink = document.getElementById('main-referrer-link');
+        if (mainReferrerLink) {
+          mainReferrerLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            const href = mainReferrerLink.href;
+            copyToClipboard(href);
+            // alert('Link copied to clipboard!');
+            Toastify({
+              text: 'Link copied to clipboard!',
+              duration: 3000,
+              close: true,
+              gravity: 'top',
+              position: 'center',
+              backgroundColor: 'linear-gradient(83deg, #1DB3B0, #347FBF) border-box;',
+              stopOnFocus: true,
+            }).showToast();
+          });
+        }
+
+        const shareLinks = document.querySelectorAll('.share-link');
+        shareLinks.forEach(link => {
+          configureShareButton(link);
+        });
+      }
+
+      // Initialize the script
+      initialize();
+    });
+  })();
+</script>

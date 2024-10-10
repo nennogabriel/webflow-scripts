@@ -70,28 +70,46 @@
       }
     }
 
+    // Debounce function
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
     // wait the page is fully loaded
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('seekers-form'); // Replace with your form ID
+      const emailField = document.getElementById('email'); // Replace with your email input ID
+
+      if (emailField) {
+        emailField.addEventListener('input', debounce(function() {
+          emailField.value = emailField.value.trim().toLowerCase();
+        }, 300));
+      }
+
       form.addEventListener('submit', async function(event) {
         event.preventDefault(); // Prevent default form submission
 
-        const emailInput = document.getElementById('email'); // Replace with your email input ID
-        const email = emailInput.value;
+        const email = emailField.value;
 
         if (isValidEmail(email)) {
           let referralData = await getReferralDataByEmail(email);
           if (referralData && referralData.id) {
             // try to get ref_code from getReferralDataByEmail, if ref_code is not found, wait 3 seconds and try again for 60 seconds
             let count = 0;
-            while (!referralData.ref_code && count < 20) {
-              await new Promise(resolve => setTimeout(resolve, 3000));
+            while (!referralData.ref_code && count < 60) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
               referralData = await getReferralDataByEmail(email);
               count++;
             }
             if (referralData.ref_code) {
               localStorage.setItem('your_ref_code', referralData.ref_code);
-              window.location.href = '/seekers-get-your-code';
+              setTimeout(() => {
+                window.location.href = '/seekers-get-your-code';
+              }, 300);
             } else {
               console.error('Failed to retrieve ref_code after multiple attempts');
             }
@@ -100,14 +118,16 @@
             let newReferralData = await createReferralRecord(email, refById);
 
             let count = 0;
-            while (!newReferralData.ref_code && count < 20) {
-              await new Promise(resolve => setTimeout(resolve, 3000));
+            while (!newReferralData.ref_code && count < 60) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
               newReferralData = await getReferralDataByEmail(email);
               count++;
             }
             if (newReferralData.ref_code) {
               localStorage.setItem('your_ref_code', newReferralData.ref_code);
-              window.location.href = '/seekers-share';
+              setTimeout(() => {
+                window.location.href = '/seekers-share';
+              }, 300);
             } else {
               console.error('Failed to retrieve ref_code after multiple attempts');
             }
