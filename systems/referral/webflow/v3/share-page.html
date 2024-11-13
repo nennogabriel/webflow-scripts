@@ -1,0 +1,82 @@
+<script>
+  $(document).ready(function () {
+    const yourRefCode = localStorage.getItem("your_ref_code");
+    const canonicalUrl = `https://${window.location.hostname}`;
+    const _zigDataUrl = "https://zignaly.directus.app";
+
+    // Function to copy text to clipboard
+    function copyToClipboard(text) {
+      const textarea = $("<textarea>").val(text).appendTo("body").select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+
+    // *** Use Cases ***
+    function useCaseUpdateReferrerLinkInDom(refCode) {
+      // prepare the referral link
+      const myRefCodeUrl = `${canonicalUrl}/seekers/?z=${refCode}`;
+      const myRefCodeUrlText = `zigchain.com/seekers/?z=${refCode}`;
+      const myRefCodeUrlEncoded = encodeURIComponent(myRefCodeUrl);
+
+      // update the main referrer link
+      const mainReferrerLink = $("#main-referrer-link");
+      $("#main-referrer-link-text").text(myRefCodeUrlText);
+      mainReferrerLink.attr("href", myRefCodeUrl);
+      mainReferrerLink.on("click", (event) => {
+        event.preventDefault();
+        const href = mainReferrerLink.attr("href");
+        copyToClipboard(href);
+        toast.success("Link copied to clipboard!");
+      });
+
+      // update the share links
+      const shareLinks = $(".share-link");
+      shareLinks.each(function () {
+        // replace ## with the actual URL
+        $(this).attr(
+          "href",
+          $(this).attr("href").replace("##", myRefCodeUrlEncoded)
+        );
+        if ($(this).hasClass("other")) {
+          if (navigator.share) {
+            $(this).css("display", "inline-block");
+            $(this).on("click", async () => {
+              try {
+                await navigator.share({
+                  title: "ZigChain",
+                  text: "Check out ZigChain and start earning!",
+                  url: myRefCodeUrl,
+                });
+              } catch (error) {
+                console.error("Error sharing:", error);
+              }
+            });
+          }
+        }
+      });
+    }
+
+    function useCaseCheckReferralCode(refCode) {
+      $.ajax({
+        url: `${_zigDataUrl}/items/zigchain_leads/?filter[ref_code][_eq]=${refCode}&limit=1`,
+        success: function (data) {
+          useCaseUpdateReferrerLinkInDom(refCode);
+        },
+        error: function (error) {
+          console.error("API call failed:", error);
+        },
+      });
+    }
+
+    // Initialize the script
+    const myRefCode = localStorage.getItem("your_ref_code");
+    if (!myRefCode) {
+      toast.error("Referral code not found. Please enter your email.");
+      setTimeout(() => {
+        window.location.href = "/seekers";
+      }, 1000);
+    } else {
+      useCaseCheckReferralCode(myRefCode);
+    }
+  });
+</script>

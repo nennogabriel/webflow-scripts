@@ -1,0 +1,127 @@
+<script>
+  $(document).ready(function () {
+    console.log(
+      [
+        "  $$$$$$$$\\ $$\\                               $$\\",
+        "  \\____$$  |\\__|                              $$ |",
+        "      $$  / $$\\  $$$$$$\\  $$$$$$$\\   $$$$$$\\  $$ |$$\\   $$\\",
+        "     $$  /  $$ |$$  __$$\\ $$  __$$\\  \\____$$\\ $$ |$$ |  $$ |",
+        "    $$  /   $$ |$$ /  $$ |$$ |  $$ | $$$$$$$ |$$ |$$ |  $$ |",
+        "   $$  /    $$ |$$ |  $$ |$$ |  $$ |$$  __$$ |$$ |$$ |  $$ |",
+        "  $$$$$$$$\\ $$ |\\$$$$$$$ |$$ |  $$ |\\$$$$$$$ |$$ |\\$$$$$$$ |",
+        "  \\________|\\__| \\____$$ |\\__|  \\__| \\_______|\\__| \\____$$ |",
+        "                $$\\   $$ |                        $$\\   $$ |",
+        "  Powered by    \\$$$$$$  |                        \\$$$$$$  |",
+        "                 \\______/                          \\______/",
+      ].join("\n")
+    );
+    const _zigDataUrl = "https://zignaly.directus.app";
+
+    // Function to get query parameter by name
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Function a generic toast message
+    function _toast(message, options = {}, style = {}) {
+      Toastify({
+        text: message,
+        duration: 5000,
+        gravity: "top",
+        position: "right",
+        stopOnFocus: true,
+        style: {
+          padding: "12px 28px",
+          minHeight: "48px",
+          minWidth: "100px",
+          fontSize: "15px",
+          textAlign: "center",
+          borderRadius: "5px",
+          margin: "0px 8px",
+          boxShadow: "rgba(0, 0, 0, 0.25) 4px 6px 4px",
+          ...style,
+        },
+        ...options,
+      }).showToast();
+    }
+
+    const toast = {
+      success: (message) =>
+        _toast(
+          message,
+          {
+            avatar:
+              "https://cdn.prod.website-files.com/6705a6b1acde497b5373a91d/67335b621e5599db36ab4260_icon-check.svg",
+          },
+          {
+            background: "#122431",
+            color: "#26c496",
+          }
+        ),
+      error: (message) =>
+        _toast(
+          message,
+          {
+            avatar:
+              "https://cdn.prod.website-files.com/6705a6b1acde497b5373a91d/67335b62cd7434fb6128cc34_icon-error-alert.svg",
+          },
+          {
+            background: "#231630",
+            color: "#CC3993",
+          }
+        ),
+      info: (message) =>
+        _toast(
+          message,
+          {
+            avatar:
+              "https://cdn.prod.website-files.com/6705a6b1acde497b5373a91d/67335b629686b29196d9a212_icon-info.svg",
+          },
+          {
+            background: "#35334A",
+            // blue like one
+            color: "#E1E9F0",
+          }
+        ),
+      qa: (message) => {
+        if (!window.location.hostname.endsWith("webflow.io")) {
+          return;
+        }
+        _toast(
+          message,
+          {
+            avatar:
+              "https://cdn.prod.website-files.com/6705a6b1acde497b5373a91d/67335b629686b29196d9a212_icon-info.svg",
+          },
+          {
+            background: "#212121",
+            // blue like one
+            color: "#FF9800",
+          }
+        );
+      },
+    };
+
+    window.toast = toast;
+
+    // Get the referral code from the query parameter
+    const refZQuery = getQueryParam("z");
+    const storedRefCode = localStorage.getItem("ref_code");
+    if (refZQuery && refZQuery !== storedRefCode) {
+      // call the API to validate the code
+      $.ajax({
+        url: `${_zigDataUrl}/items/zigchain_leads/?filter[ref_code][_eq]=${refZQuery}&limit=1`,
+        success: function (data) {
+          if (data.data && data.data.length > 0) {
+            localStorage.setItem("ref_code", refZQuery);
+            localStorage.setItem("ref_id", data.data[0].id);
+          }
+        },
+        error: function (error) {
+          console.error("API call failed:", error);
+        },
+      });
+    }
+  });
+</script>

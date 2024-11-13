@@ -1,0 +1,181 @@
+<script>
+  $(document).ready(function () {
+    const _zigDataUrl = "https://zignaly.directus.app";
+    const AUTH_TOKEN = "E6lpc0PfZk3pczbVEn1y_jftFy--fqhJ"; // Replace with your actual token
+
+    // Function to validate email format
+    function isValidEmail(email) {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailPattern.test(email);
+    }
+
+    // Make sure email is in lowercase and trimmed
+    function cleanEmail(email) {
+      return email.trim().toLowerCase();
+    }
+
+    // Debounce function
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // Function to handle style changes
+    function handleStyleChange(mutationsList, observer) {
+      for (let mutation of mutationsList) {
+        if (mutation.attributeName === "style") {
+          if ($form.css("display") === "none") {
+            $form.css("display", "block");
+          }
+          if ($emailFormSuccess.css("display") !== "none") {
+            $emailFormSuccess.css("display", "none");
+          }
+          if ($formError.css("display") !== "none") {
+            $formError.css("display", "none");
+          }
+        }
+      }
+    }
+
+    // *** Use Cases ***
+    function useCaseEmailIsNotValid() {
+      toast.error("Please enter a valid email address");
+    }
+
+    function useCaseVerifyIfEmailExists(email) {
+      const encodedEmail = encodeURIComponent(email);
+      // first step is to check if email exists
+      $.ajax({
+        url: `${_zigDataUrl}/flows/trigger/a37e4c07-c321-40df-b5c9-4d16db9b9b4f/?email=${encodedEmail}`,
+        success: function (data) {
+          if (data.length > 0 && data[0].ref_code) {
+            localStorage.setItem("your_ref_code", data[0].ref_code);
+            window.location.href = "/seekers-share";
+          } else {
+            localStorage.removeItem("your_ref_code");
+            useCaseEmailNotExists(email);
+          }
+        },
+        error: function (error) {
+          toast.error(
+            "An error occurred. Please try again later or check spelling."
+          );
+        },
+      });
+    }
+
+    function useCaseEmailNotExists(email) {
+      // first Check if email is valid by maileroo api
+      $.ajax({
+        url: `${_zigDataUrl}/flows/trigger/a6e91ecc-7260-4681-a221-cccf2b257a2f`,
+        type: "POST",
+        data: JSON.stringify({ email: email }),
+        contentType: "application/json",
+        success: function (data) {
+          try {
+            const { domain_suggestion, format_valid, mx_found } =
+              data.data.data;
+
+            console.log(data.data.data);
+            // If has domain suggestion, it has a typo!
+            if (domain_suggestion) {
+              toast.error(`Do you mean ${domain_suggestion} ?`);
+              return false;
+            }
+
+            // check email has a error tag
+            if (email.includes("+error") && email.endsWith("@zignaly.com")) {
+              toast.qa("throwing error");
+              throw new Error("Api error response");
+            }
+
+            if (format_valid && mx_found) {
+              toast.qa("Email is valid.");
+              useCaseCreateReferralRecord(email, "approved");
+            } else {
+              if (!format_valid || !mx_found) {
+                toast.error(
+                  "Email is not valid. Please check the email address."
+                );
+                return false;
+              }
+              toast.error("Unexpected error occurred. Please try again later.");
+              return false;
+            }
+          } catch (error) {
+            toast.qa("Error on api check");
+            useCaseCreateReferralRecord(email, "pending");
+            // toast.error("Unexpected error occurred. Please try again later.");
+            return false;
+          }
+        },
+        error: function (error) {
+          toast.qa("Error on api response");
+          useCaseCreateReferralRecord(email, "pending");
+          return false;
+        },
+      });
+    }
+
+    function useCaseCreateReferralRecord(email, maileroo_status) {
+      const ref_by = localStorage.getItem("ref_id");
+      $.ajax({
+        url: `${_zigDataUrl}/items/zigchain_leads`,
+        type: "POST",
+        data: JSON.stringify({ email, ref_by, maileroo_status }),
+        contentType: "application/json",
+        headers: {
+          Authorization: `Bearer ${AUTH_TOKEN}`,
+        },
+        success: function (data) {
+          toast.success("Your email has been successfully submitted.");
+          setTimeout(() => {
+            toast.success("Generating your referral code...");
+          }, 1000);
+          setTimeout(() => {
+            useCaseVerifyIfEmailExists(email);
+          }, 1500);
+        },
+        error: function (error) {
+          toast.error("Unexpected error occurred. Please try again later.");
+        },
+      });
+    }
+
+    function useCaseOnSubmitForm(email) {
+      if (!isValidEmail(email)) {
+        useCaseEmailIsNotValid();
+        return;
+      }
+      useCaseVerifyIfEmailExists(email);
+    }
+
+    // *** Event Listeners ***
+    const $form = $("#seekers-form");
+    const $emailField = $("#email");
+    const $emailFormSuccess = $("#email-form-success");
+    const $formError = $("#form-error");
+
+    $emailField.on(
+      "input",
+      debounce(function () {
+        $emailField.val(cleanEmail($emailField.val()));
+      }, 200)
+    );
+
+    $form.on("submit", function (event) {
+      event.preventDefault(); // Prevent default, but it not prevent webflow counting
+      const email = cleanEmail($emailField.val());
+      useCaseOnSubmitForm(email);
+    });
+
+    // Observer to handle style changes
+    const observer = new MutationObserver(handleStyleChange);
+    observer.observe($form[0], { attributes: true });
+    observer.observe($emailFormSuccess[0], { attributes: true });
+    observer.observe($formError[0], { attributes: true });
+  });
+</script>
