@@ -80,11 +80,6 @@
               data.data.data;
 
             console.log(data.data.data);
-            // If has domain suggestion, it has a typo!
-            if (domain_suggestion) {
-              toast.error(`Do you mean ${domain_suggestion} ?`);
-              return false;
-            }
 
             // check email has a error tag
             if (email.includes("+error") && email.endsWith("@zignaly.com")) {
@@ -96,6 +91,11 @@
               toast.qa("Email is valid.");
               useCaseCreateReferralRecord(email, "approved");
             } else {
+              // If has domain suggestion, it has a typo!
+              if (domain_suggestion) {
+                toast.error(`Do you mean ${domain_suggestion} ?`);
+                return false;
+              }
               if (!format_valid || !mx_found) {
                 toast.error(
                   "Email is not valid. Please check the email address."
